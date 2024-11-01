@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Start Xvfb and window manager
-./start_all.sh
+# Start Xvfb for basic display functionality
+./xvfb_startup.sh
 
 # Set display for the command line interface
 export DISPLAY=:1

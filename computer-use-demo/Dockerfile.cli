@@ -7,14 +7,12 @@ RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get -y install \
     build-essential \
-    # UI Requirements for virtual display
+    # Core requirements for computer interaction
     xvfb \
-    xterm \
     xdotool \
     scrot \
     imagemagick \
     sudo \
-    mutter \
     # Python/pyenv reqs
     build-essential \
     libssl-dev  \
@@ -36,18 +34,10 @@ RUN apt-get update && \
     netcat \
     # PPA req
     software-properties-common && \
-    # Userland apps
+    # Browser for basic operations
     sudo add-apt-repository ppa:mozillateam/ppa && \
     sudo apt-get install -y --no-install-recommends \
-    libreoffice \
     firefox-esr \
-    x11-apps \
-    xpdf \
-    gedit \
-    xpaint \
-    tint2 \
-    galculator \
-    pcmanfm \
     unzip && \
     apt-get clean
 
@@ -85,12 +75,11 @@ RUN python -m pip install --upgrade pip==23.1.2 setuptools==58.0.4 wheel==0.40.0
 COPY --chown=$USERNAME:$USERNAME computer_use_demo/requirements.txt $HOME/computer_use_demo/requirements.txt
 RUN python -m pip install -r $HOME/computer_use_demo/requirements.txt
 
-# setup desktop env & app
-COPY --chown=$USERNAME:$USERNAME image/start_all.sh $HOME/
-COPY --chown=$USERNAME:$USERNAME image/xvfb_startup.sh $HOME/
-COPY --chown=$USERNAME:$USERNAME image/mutter_startup.sh $HOME/
-COPY --chown=$USERNAME:$USERNAME image/tint2_startup.sh $HOME/
+# Copy application code
 COPY --chown=$USERNAME:$USERNAME computer_use_demo/ $HOME/computer_use_demo/
+
+# setup minimal display for computer tool
+COPY --chown=$USERNAME:$USERNAME image/xvfb_startup.sh $HOME/
 
 # setup CLI entrypoint script
 COPY --chown=$USERNAME:$USERNAME image/cli_entrypoint.sh $HOME/entrypoint.sh
