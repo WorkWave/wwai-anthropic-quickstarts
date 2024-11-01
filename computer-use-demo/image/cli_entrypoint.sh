@@ -1,11 +1,15 @@
 #!/bin/bash
 set -e
 
-# Start Xvfb for basic display functionality
+# Make sure we have a secure .Xauthority file
+touch $HOME/.Xauthority
+chmod 600 $HOME/.Xauthority
+
+# Start Xvfb
 ./xvfb_startup.sh
 
 # Set display for the command line interface
-export DISPLAY=:1
+export DISPLAY=:${DISPLAY_NUM}
 
 echo "✨ Computer Use Demo CLI is ready!"
 echo "Type :help for available commands"

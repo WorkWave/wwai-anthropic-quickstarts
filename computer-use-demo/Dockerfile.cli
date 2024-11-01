@@ -13,6 +13,10 @@ RUN apt-get update && \
     scrot \
     imagemagick \
     sudo \
+    # X11 requirements
+    x11-apps \
+    x11-utils \
+    x11-xserver-utils \
     # Python/pyenv reqs
     build-essential \
     libssl-dev  \
@@ -44,8 +48,12 @@ RUN apt-get update && \
 # setup user
 ENV USERNAME=computeruse
 ENV HOME=/home/$USERNAME
-RUN useradd -m -s /bin/bash -d $HOME $USERNAME
-RUN echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN useradd -m -s /bin/bash -d $HOME $USERNAME && \
+    echo "${USERNAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    # Create .X11 directory for user
+    mkdir -p $HOME/.X11 && \
+    chown -R $USERNAME:$USERNAME $HOME/.X11
+
 USER computeruse
 WORKDIR $HOME
 
@@ -80,6 +88,7 @@ COPY --chown=$USERNAME:$USERNAME computer_use_demo/ $HOME/computer_use_demo/
 
 # setup minimal display for computer tool
 COPY --chown=$USERNAME:$USERNAME image/xvfb_startup.sh $HOME/
+RUN chmod +x $HOME/xvfb_startup.sh
 
 # setup CLI entrypoint script
 COPY --chown=$USERNAME:$USERNAME image/cli_entrypoint.sh $HOME/entrypoint.sh
@@ -91,5 +100,6 @@ ARG WIDTH=1024
 ENV DISPLAY_NUM=$DISPLAY_NUM
 ENV HEIGHT=$HEIGHT
 ENV WIDTH=$WIDTH
+ENV DISPLAY=:${DISPLAY_NUM}
 
 ENTRYPOINT [ "./entrypoint.sh" ]
