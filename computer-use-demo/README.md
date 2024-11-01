@@ -127,15 +127,65 @@ You can also set `GOOGLE_APPLICATION_CREDENTIALS` to use an arbitrary credential
 
 ### Accessing the demo app
 
+The demo can be accessed through either a web interface or a command-line interface.
+
+#### Web Interface
+
 Once the container is running, open your browser to [http://localhost:8080](http://localhost:8080) to access the combined interface that includes both the agent chat and desktop view.
 
 The container stores settings like the API key and custom system prompt in `~/.anthropic/`. Mount this directory to persist these settings between container runs.
 
-Alternative access points:
+Alternative web access points:
 
 - Streamlit interface only: [http://localhost:8501](http://localhost:8501)
 - Desktop view only: [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html)
 - Direct VNC connection: `vnc://localhost:5900` (for VNC clients)
+
+#### Command Line Interface
+
+For users who prefer a terminal-based interface, you can use the CLI version which provides the same functionality without requiring a web browser:
+
+```bash
+# Using the Anthropic API
+docker run -it --rm \
+  -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+  -v $HOME/.anthropic:/home/computeruse/.anthropic \
+  ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-cli-latest
+
+# Using Bedrock
+docker run -it --rm \
+  -e API_PROVIDER=bedrock \
+  -e AWS_PROFILE=$AWS_PROFILE \
+  -e AWS_REGION=us-west-2 \
+  -v $HOME/.aws:/home/computeruse/.aws \
+  -v $HOME/.anthropic:/home/computeruse/.anthropic \
+  ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-cli-latest
+
+# Using Vertex
+docker run -it --rm \
+  -e API_PROVIDER=vertex \
+  -e CLOUD_ML_REGION=$VERTEX_REGION \
+  -e ANTHROPIC_VERTEX_PROJECT_ID=$VERTEX_PROJECT_ID \
+  -v $HOME/.config/gcloud/application_default_credentials.json:/home/computeruse/.config/gcloud/application_default_credentials.json \
+  ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-cli-latest
+```
+
+The CLI provides these commands:
+- `:help` - Show available commands
+- `:config` - Configure settings (API provider, model, API key, image settings)
+- `:settings` - Show current settings
+- `:clear` - Clear conversation history
+- `:quit` or `:exit` - Exit the program
+
+For development, build the CLI version locally:
+```bash
+docker build -f Dockerfile.cli -t computer-use-demo-cli:local .
+docker run -it --rm \
+  -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
+  -v $(pwd)/computer_use_demo:/home/computeruse/computer_use_demo/ \
+  -v $HOME/.anthropic:/home/computeruse/.anthropic \
+  computer-use-demo-cli:local
+```
 
 ## Screen size
 
