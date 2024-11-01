@@ -30,6 +30,7 @@ from computer_use_demo.loop import (
     sampling_loop,
 )
 from computer_use_demo.tools import ToolResult
+from computer_use_demo.logging_utils import InteractionLogger
 
 CONFIG_DIR = PosixPath("~/.anthropic").expanduser()
 API_KEY_FILE = CONFIG_DIR / "api_key"
@@ -44,6 +45,7 @@ class CommandLineInterface:
         self.custom_system_prompt = self._load_system_prompt()
         self.only_n_most_recent_images = 10
         self.hide_images = False
+        self.logger = InteractionLogger()
 
     def _load_api_key(self) -> str:
         """Load API key from file or environment variable."""
@@ -99,8 +101,10 @@ class CommandLineInterface:
         if isinstance(content, dict):
             if content["type"] == "text":
                 print(f"\nAssistant: {content['text']}")
+                self.logger.log_assistant_response(content)
             elif content["type"] == "tool_use":
                 print(f"\nTool Use: {content['name']}\nInput: {content['input']}")
+                self.logger.log_tool_use(content["name"], content["input"], content["id"])
 
     def tool_output_callback(self, result: ToolResult, tool_id: str) -> None:
         """Handle tool output results."""
@@ -111,9 +115,11 @@ class CommandLineInterface:
             print(f"Error: {result.error}")
         if result.base64_image and not self.hide_images:
             print("[Screenshot captured]")
+        self.logger.log_tool_result(result, tool_id)
 
     def api_response_callback(self, request: Any, response: Any, error: Optional[Exception]) -> None:
         """Handle API response and errors."""
+        self.logger.log_api_interaction(request, response, error)
         if error:
             if isinstance(error, (APIStatusError, APIResponseValidationError)):
                 print(f"\nAPI Error: {error.status_code} - {error.response.text}")
@@ -122,10 +128,12 @@ class CommandLineInterface:
 
     async def process_user_input(self, user_input: str) -> None:
         """Process user input and run the sampling loop."""
-        self.messages.append({
+        message = {
             "role": "user",
             "content": [BetaTextBlockParam(type="text", text=user_input)]
-        })
+        }
+        self.messages.append(message)
+        self.logger.log_user_input(message)
 
         try:
             self.messages = await sampling_loop(
@@ -244,6 +252,7 @@ class CommandLineInterface:
                 print("\nUse :quit to exit")
             except Exception as e:
                 print(f"\nError: {str(e)}")
+                self.logger.log_error(e)
 
 
 def main():

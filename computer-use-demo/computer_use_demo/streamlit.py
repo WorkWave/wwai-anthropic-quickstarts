@@ -28,6 +28,7 @@ from computer_use_demo.loop import (
     sampling_loop,
 )
 from computer_use_demo.tools import ToolResult
+from computer_use_demo.logging_utils import InteractionLogger
 
 CONFIG_DIR = PosixPath("~/.anthropic").expanduser()
 API_KEY_FILE = CONFIG_DIR / "api_key"
@@ -82,6 +83,8 @@ def setup_state():
         st.session_state.custom_system_prompt = load_from_storage("system_prompt") or ""
     if "hide_images" not in st.session_state:
         st.session_state.hide_images = False
+    if "logger" not in st.session_state:
+        st.session_state.logger = InteractionLogger()
 
 
 def _reset_model():
@@ -292,6 +295,8 @@ def _api_response_callback(
     response_state[response_id] = (request, response)
     if error:
         _render_error(error)
+        st.session_state.logger.log_error(error)
+    st.session_state.logger.log_api_interaction(request, response, error)
     _render_api_response(request, response, response_id, tab)
 
 
@@ -300,6 +305,7 @@ def _tool_output_callback(
 ):
     """Handle a tool output by storing it to state and rendering it."""
     tool_state[tool_id] = tool_output
+    st.session_state.logger.log_tool_result(tool_output, tool_id)
     _render_message(Sender.TOOL, tool_output)
 
 
@@ -371,8 +377,12 @@ def _render_message(
         elif isinstance(message, dict):
             if message["type"] == "text":
                 st.write(message["text"])
+                if sender == Sender.BOT:
+                    st.session_state.logger.log_assistant_response(message)
             elif message["type"] == "tool_use":
                 st.code(f'Tool Use: {message["name"]}\nInput: {message["input"]}')
+                if sender == Sender.BOT:
+                    st.session_state.logger.log_tool_use(message["name"], message["input"], message["id"])
             else:
                 # only expected return types are text and tool_use
                 raise Exception(f'Unexpected response type {message["type"]}')
